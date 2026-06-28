@@ -82,23 +82,22 @@ ms to ~1 s; a 300-token answer ≈ 300 laps ≈ several minutes. Petals was not 
 badly — ~1 tok/s is the unavoidable physics of *sequential decoding × one full WAN
 traversal per token*.
 
-**OpenBay v1 (whole-model) → near-native speed.** v1 never shards. Each worker
+**OpenBay (whole-model) → near-native speed.** It never shards. Each worker
 holds the *entire* model, so generating a token is a **local GPU forward pass** with
 zero network in the inner loop. The internet is touched once (prompt in) and to
 stream text out — a few bytes per token. The leecher sees the worker's *native*
 tokens/sec, with only one extra round-trip on time-to-first-token. The same
 300-token answer ≈ a few seconds.
 
-| Mode | Model size | Sharded? | WAN round-trips / token | tokens/sec |
-|---|---|---|---|---|
-| Petals (2022) | giant (70B–176B) | yes | 1 (full pipeline) | ~1 |
-| **OpenBay v1** (today) | fits one worker | **no** | **0** | near-native (tens–hundreds) |
-| **OpenBay v2** (target) | giant | yes, spec-decoded | ~⅛ (block per trip) | ~10–20 |
+| Approach | WAN round-trips / token | tokens/sec |
+|---|---|---|
+| **Petals (2022)** — always shards the model across peers | 1 (a full lap, every token) | ~1 |
+| **OpenBay (target)** — whole-model when it fits, block-verified when sharded | 0, or amortized to a fraction | near-native (tens–hundreds); ~10–20 even for giants |
 
-The trade is explicit: v1 is fast *because* it only serves models that fit one
+The trade is explicit: this is fast *because* it only serves models that fit one
 worker. Quantization stretches that envelope a long way (7B–30B comfortably,
 DiffusionGemma-26B in ~18 GB), but the frontier giants (400B, 1T MoE) still fit no
-single consumer card — and for those, v2 must shard, dropping straight back into
+single consumer card — and for those, OpenBay must shard too, dropping straight back into
 Petals' regime unless we change how often the round-trip is paid.
 
 ### Our north star: maximize tokens/sec at every model size
@@ -124,8 +123,8 @@ from. Every layer of the design serves that number:
   because speculative speedups are real but task-dependent, and we will not quote
   best-case numbers as typical.
 
-The throughput ladder is the whole project in miniature: **v1 already beats Petals
-by simply not sharding; v2's job is to make the *unavoidably* sharded case fast
+The throughput ladder is the whole project in miniature: **OpenBay already beats Petals
+by simply not sharding what fits; the remaining job is to make the *unavoidably* sharded case fast
 enough to feel native.**
 
 ## 3. Hypotheses we will prove (or falsify)

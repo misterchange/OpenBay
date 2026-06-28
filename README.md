@@ -120,13 +120,12 @@ cache. This is the design that works today; sharding huge models is v2.
 Because each **worker** runs a *whole* model, the speed a leecher sees is
 essentially the worker's **native** tokens/sec — OpenBay adds almost nothing (only
 the prompt and the text stream cross the wire). There's **no per-token network
-round-trip**, which is exactly why Petals was stuck at ~1 tok/s and v1 isn't:
+round-trip**, which is exactly why Petals was stuck at ~1 tok/s and OpenBay isn't:
 
-| Mode | Model | Sharded? | Round-trips / token | tok/s |
-|---|---|---|---|---|
-| Petals (2022) | giant, split across peers | yes | 1 (full pipeline) | ~1 |
-| **OpenBay v1** (today) | fits one worker | no | **0** | near-native (tens–hundreds) |
-| **OpenBay v2** (target) | giant, spec-decoded | yes | ~⅛ (block / trip) | ~10–20 |
+| Approach | WAN round-trips / token | tokens/sec |
+|---|---|---|
+| **Petals (2022)** — always shards the model across peers | 1 (a full lap, every token) | ~1 |
+| **OpenBay (target)** — whole-model when it fits, block-verified when sharded | 0, or amortized to a fraction | near-native (tens–hundreds); ~10–20 even for giants |
 
 Rough native worker speeds on a single consumer GPU: **~80–150 tok/s** for a 3B,
 **~40–80** for a 7–8B, **~20–40** for DiffusionGemma-26B. (Mac/CPU are slower; check
