@@ -100,32 +100,36 @@ DiffusionGemma-26B in ~18 GB), but the frontier giants (400B, 1T MoE) still fit 
 single consumer card — and for those, OpenBay must shard too, dropping straight back into
 Petals' regime unless we change how often the round-trip is paid.
 
-### Our north star: maximize tokens/sec at every model size
+### Our north star: more tokens/sec, for every model
 
-OpenBay's endgame in one sentence: **make pooled consumer GPUs deliver the highest
-tokens/sec we can, for any model, over ordinary internet** — ideally close enough to
-a single rented datacenter GPU that the leecher stops caring where the compute came
-from. Every layer of the design serves that number:
+The whole point of OpenBay is one number: **tokens per second** — how fast your
+answer comes back. The goal is to make a pile of ordinary consumer GPUs feel as fast
+as one expensive datacenter GPU, for any model, over a normal internet connection.
 
-- **Stay in the fast whole-model regime as long as possible.** Ultra-low-bit QAT
-  shrinks footprints so *bigger* models keep fitting on *one* worker — every model
-  we keep out of the sharded regime runs at native speed. *(This is why QAT is a
-  throughput lever, not only a memory one.)*
-- **When we must shard, amortize the round-trips.** Speculative / block-diffusion
-  decoding (DFlash, DFlare) and native MTP let a worker draft a *block* of tokens
-  the swarm verifies in a *single* round-trip — turning Petals' one-token-per-lap
-  into 4–8, the difference between ~1 and ~10–20 tok/s.
-- **Cut every avoidable millisecond.** Latency-aware routing, KV-cache locality, and
-  — for trusted, low-latency clusters — LAN/RDMA "pods" keep the network out of the
-  hot path wherever possible.
-- **Measure honestly.** tokens/sec, time-to-first-token, and tokens-accepted-per-
-  round-trip are first-class metrics (see §6), reported per model and per task —
-  because speculative speedups are real but task-dependent, and we will not quote
-  best-case numbers as typical.
+Four simple ideas get us there:
 
-The throughput ladder is the whole project in miniature: **OpenBay already beats Petals
-by simply not sharding what fits; the remaining job is to make the *unavoidably* sharded case fast
-enough to feel native.**
+**1. Keep models on one machine whenever we can.** If a model fits on a single
+worker, it runs at full speed — nothing crosses the network while it's answering. So
+we shrink models (with QAT compression) to keep *bigger* ones fitting on a single
+card. The more models that fit on one machine, the more run fast.
+
+**2. When a model is too big to fit, send more tokens per network trip.** A giant
+model has to be split across several machines, and the slow part is the trip between
+them. Petals sent *one token per trip* — that's why it crawled at ~1 tok/s. Instead,
+we let a worker guess a whole *block* of tokens that the others check in a single
+trip (this is what "speculative decoding" does). That's the jump from ~1 to ~10–20
+tok/s.
+
+**3. Cut network delay everywhere.** Send each request to a fast, nearby worker.
+Reuse work that's already done. And for friends on the same local network (a
+cluster), skip the internet entirely.
+
+**4. Be honest about speed.** We always report the real tokens/sec for each model
+and task — never a best-case number dressed up as typical.
+
+**The bottom line:** OpenBay is already faster than Petals just by *not* splitting
+models that fit on one machine. The only hard part left is making the truly huge
+models — the ones that *have* to be split — feel fast too.
 
 ## 3. Hypotheses we will prove (or falsify)
 
