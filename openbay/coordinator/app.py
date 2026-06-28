@@ -4,7 +4,7 @@ Responsibilities in v1:
   - keep a registry of seeders and which whole models each can serve
   - match an incoming client request to a capable seeder
   - relay the token stream back to the client
-  - update the kudos ledger (seeder earns, client spends)
+  - update the streak ledger (seeder earns, client spends)
 
 NOT yet implemented (see docs/ROADMAP.md): spot-check verification,
 NAT traversal, persistence, latency-aware routing, sharding (v2).
@@ -79,7 +79,7 @@ async def infer(req: InferRequest) -> StreamingResponse:
                             tokens += 1
                             yield line + "\n"
         finally:
-            # Settle kudos even if the client disconnects mid-stream.
+            # Settle streak even if the client disconnects mid-stream.
             registry.settle(req.client_id, seeder.node_id, tokens)
 
     return StreamingResponse(

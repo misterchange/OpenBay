@@ -8,7 +8,7 @@ hypotheses each milestone proves.
 **Goal:** prove H1 (a whole-model consumer-GPU swarm is usable) and set up H3.
 
 Done (v0.1 skeleton):
-- [x] Coordinator: registry + matchmaking + kudos ledger
+- [x] Coordinator: registry + matchmaking + streak ledger
 - [x] Seeder: registers, serves a whole model via Ollama, streams tokens
 - [x] Client: streams tokens from the swarm
 - [x] Smoke tests (no GPU/Ollama needed)
@@ -16,14 +16,14 @@ Done (v0.1 skeleton):
 Next (good first issues 👇):
 - [ ] **Spot-check verification** — coordinator re-sends a small % of jobs to a
       second seeder and compares first-N tokens; flag mismatches. *(core to H3)*
-- [ ] **Persistence** — back the registry + kudos ledger with SQLite so state
+- [ ] **Persistence** — back the registry + streak ledger with SQLite so state
       survives restarts.
 - [ ] **Heartbeat + eviction** — drop seeders that stop sending heartbeats; reroute.
 - [ ] **`/metrics`** — expose TTFT and tokens/sec per request (Prometheus-style).
 - [ ] **WAN simulation harness** — scripted `tc netem` latency to benchmark H2 honestly.
 - [ ] **Desktop seeder** — one-click "share my GPU while idle" wrapper (Tauri/Electron).
 - [ ] **Engine adapters** — llama.cpp and MLX seeders alongside Ollama.
-- [ ] **A tiny web dashboard** — live swarm + kudos view.
+- [ ] **A tiny web dashboard** — live swarm + streak view.
 
 ## v2 — Big-model sharding
 

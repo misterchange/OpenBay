@@ -1,7 +1,7 @@
 # Local demo — run the swarm in 5 minutes
 
 This shows a leecher running a model served by a seeder's GPU, through the
-coordinator, with a live kudos ledger.
+coordinator, with a live streak ledger.
 
 ## 0. Prerequisites
 
@@ -45,7 +45,7 @@ Tokens stream back from the seeder via the coordinator.
 
 ```bash
 curl http://localhost:8000/nodes     # who is in the swarm
-curl http://localhost:8000/ledger    # kudos: seeder earned, client spent
+curl http://localhost:8000/ledger    # streak: seeder earned, client spent
 ```
 
 ## 4. Make it a real swarm
@@ -63,7 +63,7 @@ python -m openbay.seeder --model llama3.2 --port 9001 \
 ```
 
 Re-run the client a few times: requests now load-balance across seeders, and both
-earn kudos. That's the core idea — demonstrated end to end.
+earn streak. That's the core idea — demonstrated end to end.
 
 > This is the **v1 whole-model** path: each seeder hosts a complete model, only
 > prompts and tokens cross the network (never a KV cache). Sharding huge models

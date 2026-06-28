@@ -75,7 +75,7 @@ This project is judged by these, not by vision. Each is falsifiable with a numbe
   *Metric:* tok/s and tokens-accepted-per-round-trip vs an autoregressive baseline;
   target ≥ 3× on a simulated 40–80 ms WAN link.
 
-- **H3 — A kudos economy + spot-checks sustains an honest swarm.** Reciprocity
+- **H3 — A streak economy + spot-checks sustains an honest swarm.** Reciprocity
   (earn-by-seeding, spend-by-requesting) plus randomized output spot-checks resist
   free-riding and detect bad/cheap workers at low overhead.
   *Metric:* free-rider priority decay; spot-check detection rate of injected
@@ -93,7 +93,7 @@ trustless consensus all at once.** Each is independently hard. We stage them so
 every version ships and is useful on its own.
 
 - **v1 — Whole-model swarm (this MVP).** Each seeder hosts a *complete* model it
-  can fit; the coordinator matches requests and runs a kudos ledger; clients stream
+  can fit; the coordinator matches requests and runs a streak ledger; clients stream
   tokens. No sharding, no custom quantization, no blockchain. Proves **H1** (and
   sets up H3). This is essentially a productized, accelerated
   [AI Horde](https://aihorde.net/) with a clean client.
@@ -108,12 +108,12 @@ every version ships and is useful on its own.
 
 ```
 [ Leecher/Client ] --prompt--> [ Coordinator ] --match--> [ Seeder: whole model ]
-        ^                        kudos ledger                     | (Ollama/llama.cpp/MLX)
+        ^                        streak ledger                     | (Ollama/llama.cpp/MLX)
         +<------------------- streamed tokens --------------------+
 ```
 
 - **Coordinator** — registry of seeders and the models each serves; matchmaking;
-  kudos accounting; (next) randomized spot-check verification.
+  streak accounting; (next) randomized spot-check verification.
 - **Seeder** — registers, hosts a whole model via a local engine (Ollama in v1;
   llama.cpp/MLX/vLLM are drop-in), streams tokens.
 - **Client** — submits prompts, renders the stream.
@@ -154,7 +154,7 @@ research-compute grants) rather than as a closed product.
   non-sensitive and trusted-pod use; stronger guarantees (trust tiers, eventually
   confidential compute) come later. We will not overstate this.
 - **Leverage = queues, not magic.** One GPU serves a few concurrent users, not
-  thousands. "Free" means cost-shifted to idle hardware and rationed by a kudos
+  thousands. "Free" means cost-shifted to idle hardware and rationed by a streak
   queue — by design, not by accident.
 - **Agentic/long-context workloads** stress KV-cache locality and churn; v1 is best
   suited to one-shot and short-context generation.

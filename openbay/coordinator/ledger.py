@@ -1,4 +1,4 @@
-"""In-memory node registry + kudos ledger.
+"""In-memory node registry + streak ledger.
 
 This is the MVP's coordination brain. It deliberately keeps everything in
 process memory so the demo runs with zero external dependencies. Persistence
@@ -25,7 +25,7 @@ class Seeder:
 class Registry:
     def __init__(self) -> None:
         self._seeders: dict[str, Seeder] = {}
-        self._kudos: dict[str, float] = {}
+        self._streak: dict[str, float] = {}
         self._lock = threading.Lock()
 
     # --- node lifecycle ---
@@ -33,7 +33,7 @@ class Registry:
                  gpu: str | None = None) -> None:
         with self._lock:
             self._seeders[node_id] = Seeder(node_id, url, list(models), gpu)
-            self._kudos.setdefault(node_id, 0.0)
+            self._streak.setdefault(node_id, 0.0)
 
     def heartbeat(self, node_id: str) -> None:
         with self._lock:
@@ -50,16 +50,16 @@ class Registry:
         candidates = self.seeders_for(model)
         return random.choice(candidates) if candidates else None
 
-    # --- kudos economy ---
+    # --- streak economy ---
     def settle(self, client_id: str, node_id: str, tokens: float) -> None:
         """Credit the seeder for work done, debit the client who consumed it."""
         with self._lock:
-            self._kudos[node_id] = self._kudos.get(node_id, 0.0) + tokens
-            self._kudos[client_id] = self._kudos.get(client_id, 0.0) - tokens
+            self._streak[node_id] = self._streak.get(node_id, 0.0) + tokens
+            self._streak[client_id] = self._streak.get(client_id, 0.0) - tokens
 
     def balances(self) -> dict[str, float]:
         with self._lock:
-            return dict(self._kudos)
+            return dict(self._streak)
 
     def nodes(self) -> list[dict]:
         with self._lock:

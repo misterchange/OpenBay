@@ -7,14 +7,14 @@
 Large models are gated behind expensive GPUs, cloud accounts, credit cards, and
 region locks. OpenBay lets anyone run a model their own hardware can't, by
 pooling idle consumer GPUs into a verifiable swarm. A **leecher** sends a prompt;
-**seeders** with spare GPU time serve it and earn **kudos**; the more you seed,
+**seeders** with spare GPU time serve it and earn **streak**; the more you seed,
 the higher your priority. It's open-source infrastructure for AI access that no
 single company can revoke, meter, or surveil.
 
 > **Status: v0.1 — working MVP skeleton.** This repo runs an end-to-end
 > *whole-model swarm* on your machine/LAN today: a coordinator, one or more
 > seeders (each serving a complete model via [Ollama](https://ollama.com)), and a
-> streaming client with a kudos ledger. Sharding huge models across peers (v2) and
+> streaming client with a streak ledger. Sharding huge models across peers (v2) and
 > trustless verification (v3) are on the [roadmap](docs/ROADMAP.md).
 
 See **[docs/PLAN.md](docs/PLAN.md)** for the full plan of action and the
@@ -75,7 +75,7 @@ Tokens stream back from the seeder, through the coordinator, to you. Check the
 economy at any time:
 
 ```bash
-curl http://localhost:8000/ledger   # kudos: seeders earn, clients spend
+curl http://localhost:8000/ledger   # streak: seeders earn, clients spend
 curl http://localhost:8000/nodes    # who's in the swarm
 ```
 
@@ -87,11 +87,11 @@ the core idea, demonstrated.
 
 ```
 [ Leecher ] --prompt--> [ Coordinator ] --picks a seeder--> [ Seeder (whole model, Ollama) ]
-     ^                       (kudos ledger)                          |
+     ^                       (streak ledger)                          |
      +<----------------- streamed tokens ----------------------------+
 ```
 
-- **Coordinator** (`openbay/coordinator/`) — registry + matchmaking + kudos.
+- **Coordinator** (`openbay/coordinator/`) — registry + matchmaking + streak.
 - **Seeder** (`openbay/seeder/`) — registers, serves a whole model, streams tokens.
 - **Client** (`openbay/client/`) — sends a prompt, prints the stream.
 
@@ -101,7 +101,7 @@ cache. This is the design that works today; sharding huge models is v2.
 
 ## Roadmap (short)
 
-- **v1 — whole-model swarm** *(this MVP)*: matchmaking, kudos, streaming. Next:
+- **v1 — whole-model swarm** *(this MVP)*: matchmaking, streak, streaming. Next:
   spot-check verification, persistence, NAT traversal, a desktop seeder.
 - **v2 — big-model sharding**: split models too big for one card across peers,
   with speculative/block transport to keep tokens-per-round-trip high.
