@@ -176,43 +176,34 @@ every version ships and is useful on its own.
 - **v3 — Permissionless trust + economy.** VeriLLM-style verifiable inference,
   reputation, and real settlement. Targets the trustless end of **H3**.
 
-### Cluster mode: trusted private pods (a parallel track)
+### Cluster mode: private pods (a parallel track)
 
-The staging above describes the **open, permissionless** swarm — anyone joins,
-which forces the hardest problems (trust, verification, privacy, cold-start). A
-second deployment mode inverts every one of them: a **private cluster** that
-friends, a lab, or a company form with a shared **join code**. Everyone in the pod
-is trusted, so the expensive machinery is simply not needed.
+A **cluster** in OpenBay terms = a **private pod**: one coordinator + a join code +
+a private namespace, so only invited machines can register. The "start a 2nd worker
+on your LAN" step from the demo is already a baby version of this — add a code and an
+access check and you've got cluster mode. The coordinator is lightweight (just
+matchmaking), so one friend can host it, or you run a tiny shared one.
 
-| Open swarm's hard problem | Inside a trusted cluster |
-|---|---|
-| Privacy — prompt runs on a stranger's GPU | dissolved; every member is trusted |
-| Verification / malicious workers (the whole v3 layer) | unnecessary — no spot-checks, no consensus |
-| Cold-start — need a global network to be useful | gone — three machines and a code is a working network |
-| Sharding latency over WAN (the Petals wall) | often gone — members are frequently on one **LAN**, where pooling is fast |
+**Two flavors (and which is the killer):**
 
-Mechanically, a cluster is a small extension of the whole-model architecture: a
-coordinator (hosted by one member, or a lightweight shared instance) that only
-admits workers and leechers presenting the cluster's join code, in a private
-namespace. The streak economy becomes optional inside a trusted pod — members may
-simply share freely.
+- **Load-balance whole models across friends** — each friend runs models they can
+  fit; the cluster spreads requests and pools model variety. Trivial — basically
+  works today.
+- **Pool GPUs to run one model none of you can alone** — 4 friends × 12 GB = 48 GB →
+  run a 70B together (Exo-style sharding). This is the killer feature, and a trusted
+  LAN cluster is the best possible place for it: no verification overhead, and on a
+  local network the per-token latency that crushed Petals largely disappears. "Us
+  four, pooling our laptops to run a model none of us could" is a fantastic demo.
 
-Two flavors, in increasing ambition:
+**Honest caveats:**
 
-- **Pooled variety / throughput.** Each member runs whole models they can fit; the
-  cluster load-balances requests and pools model coverage. Essentially available
-  today, plus a join code.
-- **Pooled capacity (the headline).** Members combine VRAM to run a single model
-  none of them could host alone — four 12 GB cards → 48 GB → a 70B-class model,
-  Exo-style. A trusted cluster is the *ideal* home for this: no verification
-  overhead, and on a LAN the per-token round-trip that capped Petals largely
-  disappears.
-
-Strategically, cluster mode may be OpenBay's strongest **early-adoption wedge**: it
-is private by construction, viral (you invite friends), needs none of the trust
-infrastructure, and delivers concrete value at three machines — while remaining the
-same codebase that grows into the open swarm. We treat it as a **track running
-alongside** the open-swarm staging, not a detour from it.
+- **Who hosts the coordinator** — one friend's machine, or a small shared one. Fine
+  either way (it's lightweight), but someone has to be the host.
+- **NAT traversal** — friends on different home networks still need hole-punching
+  (STUN/TURN) to connect directly; same challenge as the open swarm, smaller scale.
+- **WAN-distributed friends** — if your cluster is friends across cities (not the
+  same LAN), the GPU-pooling flavor still pays the round-trip latency, so it leans
+  on speculative decoding to stay fast. Same-room/LAN clusters are where it screams.
 
 ## 5. Architecture (v1)
 
