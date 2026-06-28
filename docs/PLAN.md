@@ -59,46 +59,36 @@ Honest caveat we carry throughout: speculative decoding still serializes one
 code/math, lower on open chat). The gain is real but bounded — roughly 3–8× over a
 Petals-style baseline, not orders of magnitude. We will measure it, not assume it.
 
-### The throughput story: why Petals hit ~1 tok/s, and why OpenBay doesn't
+### The throughput story: why Petals hit ~1 tok/s, and how OpenBay maximizes tokens/sec
 
-The one number a leecher actually feels is **tokens/sec**, and OpenBay's entire
-design exists to maximize it. The clearest way to see our staging is to compare the
-two architectures token-by-token.
+The one number a leecher feels is **tokens/sec** — how fast the answer streams back —
+and OpenBay runs at the **worker's full GPU speed**. Because each worker holds the
+*whole* model, generating a token is just a local GPU pass: the internet is touched
+once to send your prompt, then to stream the answer back. On a single consumer card
+that's roughly:
 
-**Petals (sharded over WAN) → ~1 tok/s.** Petals served models too big for any one
-machine (BLOOM-176B ≈ 350 GB in FP16), so it *had* to split the layers across many
-peers. But autoregressive generation is sequential — token *N+1* can't begin until
-token *N* is produced and fed back — and in a sharded network, producing a single
-token means the activation tensor must traverse the *entire* chain of peers over
-the internet:
+- **~80–150 tokens/sec** for a 3B model
+- **~40–80 tokens/sec** for a 7–8B model
+- **~20–40 tokens/sec** for DiffusionGemma (a 26B model)
 
-```
-[Leecher] → [Peer: layers 1–8] → [Peer: 9–16] → [Peer: 17–24] → … → [Leecher]
-            └────────── one full lap over WAN, PER TOKEN ──────────┘
-```
+A 300-token answer lands in a few **seconds** — and every worker you add lets the
+swarm serve more people at the same time.
 
-With ~8 shards at 50–100 ms per consumer-internet hop, each token costs hundreds of
-ms to ~1 s; a 300-token answer ≈ 300 laps ≈ several minutes. Petals was not built
-badly — ~1 tok/s is the unavoidable physics of *sequential decoding × one full WAN
-traversal per token*.
-
-**OpenBay (whole-model) → near-native speed.** It never shards. Each worker
-holds the *entire* model, so generating a token is a **local GPU forward pass** with
-zero network in the inner loop. The internet is touched once (prompt in) and to
-stream text out — a few bytes per token. The leecher sees the worker's *native*
-tokens/sec, with only one extra round-trip on time-to-first-token. The same
-300-token answer ≈ a few seconds.
+That speed comes from *not* splitting the model. Petals had to split big models
+across many machines, so every token made a full lap across the internet — which is
+why it was stuck at ~1 tok/s (the same answer took minutes). OpenBay skips that lap
+entirely by keeping each model on one machine.
 
 | Approach | WAN round-trips / token | tokens/sec |
 |---|---|---|
 | **Petals (2022)** — always shards the model across peers | 1 (a full lap, every token) | ~1 |
 | **OpenBay (target)** — whole-model when it fits, block-verified when sharded | 0, or amortized to a fraction | near-native (tens–hundreds); ~10–20 even for giants |
 
-The trade is explicit: this is fast *because* it only serves models that fit one
-worker. Quantization stretches that envelope a long way (7B–30B comfortably,
-DiffusionGemma-26B in ~18 GB), but the frontier giants (400B, 1T MoE) still fit no
-single consumer card — and for those, OpenBay must shard too, dropping straight back into
-Petals' regime unless we change how often the round-trip is paid.
+The one trade-off: this speed comes from serving models that fit on a single worker.
+Quantization stretches that a long way (7B–30B easily, DiffusionGemma-26B in ~18 GB).
+The truly giant models (400B+, 1T MoE) still have to be split across machines — and
+making *those* fast is exactly what speculative decoding is for: a whole block of
+tokens per lap instead of one, lifting the split case to ~10–20 tok/s.
 
 ### Our north star: more tokens/sec, for every model
 
