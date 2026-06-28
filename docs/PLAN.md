@@ -172,6 +172,44 @@ every version ships and is useful on its own.
 - **v3 — Permissionless trust + economy.** VeriLLM-style verifiable inference,
   reputation, and real settlement. Targets the trustless end of **H3**.
 
+### Cluster mode: trusted private pods (a parallel track)
+
+The staging above describes the **open, permissionless** swarm — anyone joins,
+which forces the hardest problems (trust, verification, privacy, cold-start). A
+second deployment mode inverts every one of them: a **private cluster** that
+friends, a lab, or a company form with a shared **join code**. Everyone in the pod
+is trusted, so the expensive machinery is simply not needed.
+
+| Open swarm's hard problem | Inside a trusted cluster |
+|---|---|
+| Privacy — prompt runs on a stranger's GPU | dissolved; every member is trusted |
+| Verification / malicious workers (the whole v3 layer) | unnecessary — no spot-checks, no consensus |
+| Cold-start — need a global network to be useful | gone — three machines and a code is a working network |
+| Sharding latency over WAN (the Petals wall) | often gone — members are frequently on one **LAN**, where pooling is fast |
+
+Mechanically, a cluster is a small extension of the whole-model architecture: a
+coordinator (hosted by one member, or a lightweight shared instance) that only
+admits workers and leechers presenting the cluster's join code, in a private
+namespace. The streak economy becomes optional inside a trusted pod — members may
+simply share freely.
+
+Two flavors, in increasing ambition:
+
+- **Pooled variety / throughput.** Each member runs whole models they can fit; the
+  cluster load-balances requests and pools model coverage. Essentially available
+  today, plus a join code.
+- **Pooled capacity (the headline).** Members combine VRAM to run a single model
+  none of them could host alone — four 12 GB cards → 48 GB → a 70B-class model,
+  Exo-style. A trusted cluster is the *ideal* home for this: no verification
+  overhead, and on a LAN the per-token round-trip that capped Petals largely
+  disappears.
+
+Strategically, cluster mode may be OpenBay's strongest **early-adoption wedge**: it
+is private by construction, viral (you invite friends), needs none of the trust
+infrastructure, and delivers concrete value at three machines — while remaining the
+same codebase that grows into the open swarm. We treat it as a **track running
+alongside** the open-swarm staging, not a detour from it.
+
 ## 5. Architecture (v1)
 
 ```
@@ -219,8 +257,8 @@ research-compute grants) rather than as a closed product.
 ## 8. Risks & honest limitations
 
 - **Privacy.** A prompt runs on a stranger's GPU in plaintext. v1 targets
-  non-sensitive and trusted-pod use; stronger guarantees (trust tiers, eventually
-  confidential compute) come later. We will not overstate this.
+  non-sensitive use and **cluster mode** (trusted private pods — see §4), with
+  stronger guarantees (confidential compute) coming later. We will not overstate this.
 - **Leverage = queues, not magic.** One GPU serves a few concurrent users, not
   thousands. "Free" means cost-shifted to idle hardware and rationed by a streak
   queue — by design, not by accident.

@@ -137,6 +137,22 @@ amortize round-trips with speculative/block decoding (DFlash/DFlare) when a mode
 too big to fit one worker. The full throughput argument is in
 [docs/PLAN.md](docs/PLAN.md).
 
+## Cluster mode (private pods) — *planned*
+
+OpenBay also runs **private**: friends, a lab, or a team form a **cluster** with a
+shared join code and pool their machines into a trusted pod. Because everyone's
+invited, the hardest parts of the open swarm simply vanish — **no privacy worries,
+no verification, no cold-start.** Two flavors:
+
+- **Share the load** — each member runs whole models they can fit; the cluster
+  spreads requests across them.
+- **Pool the VRAM** — combine cards to run one model none of you could host alone
+  (four 12 GB → 48 GB → a 70B), Exo-style. Best on a LAN, where pooling is fast.
+
+It's the same codebase as the open swarm, plus a join code and a private namespace —
+and likely the easiest, most viral way to get started. Full rationale in
+[docs/PLAN.md](docs/PLAN.md).
+
 ## Roadmap (short)
 
 - **v1 — whole-model swarm** *(this MVP)*: matchmaking, streak, streaming. Next:
