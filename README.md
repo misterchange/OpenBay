@@ -115,6 +115,29 @@ Each worker hosts a **whole** model (no per-token network hops, no pipeline
 stalls). What crosses the network is a prompt and a token stream — never a KV
 cache. This is the design that works today; sharding huge models is v2.
 
+## Performance — what to expect, and the goal
+
+Because each **worker** runs a *whole* model, the speed a leecher sees is
+essentially the worker's **native** tokens/sec — OpenBay adds almost nothing (only
+the prompt and the text stream cross the wire). There's **no per-token network
+round-trip**, which is exactly why Petals was stuck at ~1 tok/s and v1 isn't:
+
+| Mode | Model | Sharded? | Round-trips / token | tok/s |
+|---|---|---|---|---|
+| Petals (2022) | giant, split across peers | yes | 1 (full pipeline) | ~1 |
+| **OpenBay v1** (today) | fits one worker | no | **0** | near-native (tens–hundreds) |
+| **OpenBay v2** (target) | giant, spec-decoded | yes | ~⅛ (block / trip) | ~10–20 |
+
+Rough native worker speeds on a single consumer GPU: **~80–150 tok/s** for a 3B,
+**~40–80** for a 7–8B, **~20–40** for DiffusionGemma-26B. (Mac/CPU are slower; check
+yours with `ollama ps`.)
+
+**North-star goal:** push pooled consumer GPUs toward *datacenter-GPU* tokens/sec
+for **any** model — keep models in the fast whole-model regime with QAT, and
+amortize round-trips with speculative/block decoding (DFlash/DFlare) when a model is
+too big to fit one worker. The full throughput argument is in
+[docs/PLAN.md](docs/PLAN.md).
+
 ## Roadmap (short)
 
 - **v1 — whole-model swarm** *(this MVP)*: matchmaking, streak, streaming. Next:

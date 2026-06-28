@@ -59,6 +59,75 @@ Honest caveat we carry throughout: speculative decoding still serializes one
 code/math, lower on open chat). The gain is real but bounded — roughly 3–8× over a
 Petals-style baseline, not orders of magnitude. We will measure it, not assume it.
 
+### The throughput story: why Petals hit ~1 tok/s, and why OpenBay doesn't
+
+The one number a leecher actually feels is **tokens/sec**, and OpenBay's entire
+design exists to maximize it. The clearest way to see our staging is to compare the
+two architectures token-by-token.
+
+**Petals (sharded over WAN) → ~1 tok/s.** Petals served models too big for any one
+machine (BLOOM-176B ≈ 350 GB in FP16), so it *had* to split the layers across many
+peers. But autoregressive generation is sequential — token *N+1* can't begin until
+token *N* is produced and fed back — and in a sharded network, producing a single
+token means the activation tensor must traverse the *entire* chain of peers over
+the internet:
+
+```
+[Leecher] → [Peer: layers 1–8] → [Peer: 9–16] → [Peer: 17–24] → … → [Leecher]
+            └────────── one full lap over WAN, PER TOKEN ──────────┘
+```
+
+With ~8 shards at 50–100 ms per consumer-internet hop, each token costs hundreds of
+ms to ~1 s; a 300-token answer ≈ 300 laps ≈ several minutes. Petals was not built
+badly — ~1 tok/s is the unavoidable physics of *sequential decoding × one full WAN
+traversal per token*.
+
+**OpenBay v1 (whole-model) → near-native speed.** v1 never shards. Each worker
+holds the *entire* model, so generating a token is a **local GPU forward pass** with
+zero network in the inner loop. The internet is touched once (prompt in) and to
+stream text out — a few bytes per token. The leecher sees the worker's *native*
+tokens/sec, with only one extra round-trip on time-to-first-token. The same
+300-token answer ≈ a few seconds.
+
+| Mode | Model size | Sharded? | WAN round-trips / token | tokens/sec |
+|---|---|---|---|---|
+| Petals (2022) | giant (70B–176B) | yes | 1 (full pipeline) | ~1 |
+| **OpenBay v1** (today) | fits one worker | **no** | **0** | near-native (tens–hundreds) |
+| **OpenBay v2** (target) | giant | yes, spec-decoded | ~⅛ (block per trip) | ~10–20 |
+
+The trade is explicit: v1 is fast *because* it only serves models that fit one
+worker. Quantization stretches that envelope a long way (7B–30B comfortably,
+DiffusionGemma-26B in ~18 GB), but the frontier giants (400B, 1T MoE) still fit no
+single consumer card — and for those, v2 must shard, dropping straight back into
+Petals' regime unless we change how often the round-trip is paid.
+
+### Our north star: maximize tokens/sec at every model size
+
+OpenBay's endgame in one sentence: **make pooled consumer GPUs deliver the highest
+tokens/sec we can, for any model, over ordinary internet** — ideally close enough to
+a single rented datacenter GPU that the leecher stops caring where the compute came
+from. Every layer of the design serves that number:
+
+- **Stay in the fast whole-model regime as long as possible.** Ultra-low-bit QAT
+  shrinks footprints so *bigger* models keep fitting on *one* worker — every model
+  we keep out of the sharded regime runs at native speed. *(This is why QAT is a
+  throughput lever, not only a memory one.)*
+- **When we must shard, amortize the round-trips.** Speculative / block-diffusion
+  decoding (DFlash, DFlare) and native MTP let a worker draft a *block* of tokens
+  the swarm verifies in a *single* round-trip — turning Petals' one-token-per-lap
+  into 4–8, the difference between ~1 and ~10–20 tok/s.
+- **Cut every avoidable millisecond.** Latency-aware routing, KV-cache locality, and
+  — for trusted, low-latency clusters — LAN/RDMA "pods" keep the network out of the
+  hot path wherever possible.
+- **Measure honestly.** tokens/sec, time-to-first-token, and tokens-accepted-per-
+  round-trip are first-class metrics (see §6), reported per model and per task —
+  because speculative speedups are real but task-dependent, and we will not quote
+  best-case numbers as typical.
+
+The throughput ladder is the whole project in miniature: **v1 already beats Petals
+by simply not sharding; v2's job is to make the *unavoidably* sharded case fast
+enough to feel native.**
+
 ## 3. Hypotheses we will prove (or falsify)
 
 This project is judged by these, not by vision. Each is falsifiable with a number.
