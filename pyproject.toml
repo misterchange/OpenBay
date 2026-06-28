@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openbay"
+version = "0.1.0"
+description = "Open, shared AI for everyone's hardware. BitTorrent-style peer-to-peer LLM inference on pooled consumer GPUs."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "OpenBay contributors" }]
+keywords = ["llm", "inference", "p2p", "decentralized", "open-source", "diffusion", "speculative-decoding"]
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "httpx>=0.27",
+    "pydantic>=2.6",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+openbay = "openbay.client.cli:main"
+openbay-coordinator = "openbay.coordinator.__main__:main"
+openbay-seeder = "openbay.seeder.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["openbay*"]
