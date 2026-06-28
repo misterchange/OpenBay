@@ -1,10 +1,10 @@
 """OpenBay coordinator (the "tracker").
 
 Responsibilities in v1:
-  - keep a registry of seeders and which whole models each can serve
-  - match an incoming client request to a capable seeder
+  - keep a registry of workers and which whole models each can serve
+  - match an incoming client request to a capable worker
   - relay the token stream back to the client
-  - update the streak ledger (seeder earns, client spends)
+  - update the streak ledger (worker earns, client spends)
 
 NOT yet implemented (see docs/ROADMAP.md): spot-check verification,
 NAT traversal, persistence, latency-aware routing, sharding (v2).
@@ -27,7 +27,7 @@ def root() -> dict:
     return {
         "service": "openbay-coordinator",
         "status": "ok",
-        "seeders": len(registry.nodes()),
+        "workers": len(registry.nodes()),
     }
 
 
@@ -55,11 +55,11 @@ def ledger() -> dict:
 
 @app.post("/v1/infer")
 async def infer(req: InferRequest) -> StreamingResponse:
-    seeder = registry.pick(req.model)
-    if seeder is None:
+    worker = registry.pick(req.model)
+    if worker is None:
         raise HTTPException(
             status_code=503,
-            detail=f"no seeder currently serving model '{req.model}'",
+            detail=f"no worker currently serving model '{req.model}'",
         )
 
     async def stream():
@@ -72,7 +72,7 @@ async def infer(req: InferRequest) -> StreamingResponse:
         try:
             async with httpx.AsyncClient(timeout=None) as cx:
                 async with cx.stream(
-                    "POST", f"{seeder.url}/generate", json=payload
+                    "POST", f"{worker.url}/generate", json=payload
                 ) as resp:
                     async for line in resp.aiter_lines():
                         if line:
@@ -80,10 +80,10 @@ async def infer(req: InferRequest) -> StreamingResponse:
                             yield line + "\n"
         finally:
             # Settle streak even if the client disconnects mid-stream.
-            registry.settle(req.client_id, seeder.node_id, tokens)
+            registry.settle(req.client_id, worker.node_id, tokens)
 
     return StreamingResponse(
         stream(),
         media_type="application/x-ndjson",
-        headers={"X-Seeder": seeder.node_id},
+        headers={"X-Worker": worker.node_id},
     )

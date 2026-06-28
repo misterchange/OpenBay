@@ -24,7 +24,7 @@ dev = ["pytest>=8.0"]
 [project.scripts]
 openbay = "openbay.client.cli:main"
 openbay-coordinator = "openbay.coordinator.__main__:main"
-openbay-seeder = "openbay.seeder.__main__:main"
+openbay-worker = "openbay.worker.__main__:main"
 
 [tool.setuptools.packages.find]
 include = ["openbay*"]

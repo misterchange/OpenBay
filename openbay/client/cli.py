@@ -16,14 +16,14 @@ import httpx
 
 def run(prompt: str, model: str, coordinator: str, client_id: str) -> int:
     payload = {"model": model, "prompt": prompt, "client_id": client_id}
-    seeder = None
+    worker = None
     with httpx.Client(timeout=None) as cx:
         with cx.stream("POST", f"{coordinator}/v1/infer", json=payload) as r:
             if r.status_code != 200:
                 body = r.read().decode(errors="replace")
                 print(f"error {r.status_code}: {body}", file=sys.stderr)
                 return 1
-            seeder = r.headers.get("X-Seeder")
+            worker = r.headers.get("X-Worker")
             for line in r.iter_lines():
                 if not line:
                     continue
@@ -36,8 +36,8 @@ def run(prompt: str, model: str, coordinator: str, client_id: str) -> int:
                 if obj.get("done"):
                     break
     print()
-    if seeder:
-        print(f"[served by seeder: {seeder}]", file=sys.stderr)
+    if worker:
+        print(f"[served by worker: {worker}]", file=sys.stderr)
     return 0
 
 

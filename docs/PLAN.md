@@ -63,7 +63,7 @@ Petals-style baseline, not orders of magnitude. We will measure it, not assume i
 
 This project is judged by these, not by vision. Each is falsifiable with a number.
 
-- **H1 — A whole-model swarm is usable.** A swarm of consumer-class seeders, each
+- **H1 — A whole-model swarm is usable.** A swarm of consumer-class workers, each
   hosting a complete (quantized) model, can serve requests at usable interactive
   latency over LAN, and acceptably over WAN.
   *Metric:* tokens/sec and time-to-first-token (TTFT) vs a single local node;
@@ -79,7 +79,7 @@ This project is judged by these, not by vision. Each is falsifiable with a numbe
   (earn-by-seeding, spend-by-requesting) plus randomized output spot-checks resist
   free-riding and detect bad/cheap workers at low overhead.
   *Metric:* free-rider priority decay; spot-check detection rate of injected
-  faulty seeders; verification overhead target < 5% (path toward VeriLLM's ~1%).
+  faulty workers; verification overhead target < 5% (path toward VeriLLM's ~1%).
 
 - **H4 — QAT keeps quality while fitting consumer VRAM.** 4-bit (and lower) QAT
   models stay within a small quality delta of FP16 while fitting a single
@@ -92,7 +92,7 @@ The cardinal design decision: **do not attempt sharding and ultra-low-bit QAT an
 trustless consensus all at once.** Each is independently hard. We stage them so
 every version ships and is useful on its own.
 
-- **v1 — Whole-model swarm (this MVP).** Each seeder hosts a *complete* model it
+- **v1 — Whole-model swarm (this MVP).** Each worker hosts a *complete* model it
   can fit; the coordinator matches requests and runs a streak ledger; clients stream
   tokens. No sharding, no custom quantization, no blockchain. Proves **H1** (and
   sets up H3). This is essentially a productized, accelerated
@@ -107,18 +107,18 @@ every version ships and is useful on its own.
 ## 5. Architecture (v1)
 
 ```
-[ Leecher/Client ] --prompt--> [ Coordinator ] --match--> [ Seeder: whole model ]
+[ Leecher/Client ] --prompt--> [ Coordinator ] --match--> [ Worker: whole model ]
         ^                        streak ledger                     | (Ollama/llama.cpp/MLX)
         +<------------------- streamed tokens --------------------+
 ```
 
-- **Coordinator** — registry of seeders and the models each serves; matchmaking;
+- **Coordinator** — registry of workers and the models each serves; matchmaking;
   streak accounting; (next) randomized spot-check verification.
-- **Seeder** — registers, hosts a whole model via a local engine (Ollama in v1;
+- **Worker** — registers, hosts a whole model via a local engine (Ollama in v1;
   llama.cpp/MLX/vLLM are drop-in), streams tokens.
 - **Client** — submits prompts, renders the stream.
 
-Crucially, **each seeder keeps its KV cache local; only prompts and token streams
+Crucially, **each worker keeps its KV cache local; only prompts and token streams
 cross the network.** This sidesteps the datacenter KV-cache-shuffling problems that
 afflict disaggregated serving — they don't apply to a whole-model swarm.
 
@@ -132,9 +132,9 @@ We borrow three measurement axes (adapted from distributed-inference literature)
 2. **Generation quality & alignment** — KL-divergence and task benchmarks
    (e.g. GSM8K, HumanEval) of quantized swarm output vs an FP16 reference, to prove
    decentralization/quantization don't degrade results.
-3. **Resource efficiency & resilience** — VRAM per seeder, MB transferred per
+3. **Resource efficiency & resilience** — VRAM per worker, MB transferred per
    generated token, free-rider resistance, and spot-check detection rate against
-   deliberately faulty seeders.
+   deliberately faulty workers.
 
 Baselines: a single local node (upper bound on quality/latency) and an
 autoregressive P2P relay (the Petals-style lower bound we must beat on WAN).

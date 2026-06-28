@@ -23,7 +23,7 @@ def test_register_then_listed():
     assert any(n["node_id"] == "n1" for n in nodes)
 
 
-def test_infer_without_seeder_returns_503():
+def test_infer_without_worker_returns_503():
     c = TestClient(app)
     r = c.post("/v1/infer", json={"model": "no-such-model", "prompt": "hi"})
     assert r.status_code == 503

@@ -1,4 +1,4 @@
-"""Seeder worker: serves a whole model and streams tokens.
+"""Worker node: serves a whole model and streams tokens.
 
 v1 wraps a local Ollama server (https://ollama.com) as the inference engine,
 because it's the easiest way for a volunteer to host a real model on consumer
@@ -19,7 +19,7 @@ OLLAMA_URL = "http://localhost:11434/api/generate"
 
 
 def build_app(default_model: str) -> FastAPI:
-    app = FastAPI(title="OpenBay Seeder", version="0.1.0")
+    app = FastAPI(title="OpenBay Worker", version="0.1.0")
 
     @app.get("/health")
     def health() -> dict:

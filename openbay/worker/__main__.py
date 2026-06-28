@@ -1,6 +1,6 @@
-"""Run a seeder:
+"""Run a worker:
 
-    python -m openbay.seeder --model llama3.2 --coordinator http://localhost:8000
+    python -m openbay.worker --model llama3.2 --coordinator http://localhost:8000
 
 Registers with the coordinator on startup, then serves its model.
 """
@@ -22,19 +22,19 @@ def _register(coordinator: str, node_id: str, url: str, model: str) -> None:
             json={"node_id": node_id, "url": url, "models": [model]},
             timeout=10,
         )
-        print(f"[seeder] registered '{node_id}' with {coordinator}")
+        print(f"[worker] registered '{node_id}' with {coordinator}")
     except Exception as exc:  # noqa: BLE001 - best-effort, keep serving regardless
-        print(f"[seeder] registration failed ({exc}); will keep serving locally")
+        print(f"[worker] registration failed ({exc}); will keep serving locally")
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="OpenBay seeder")
+    p = argparse.ArgumentParser(description="OpenBay worker")
     p.add_argument("--model", required=True, help="model name to serve (e.g. llama3.2)")
     p.add_argument("--coordinator", default="http://localhost:8000")
     p.add_argument("--host", default="0.0.0.0")
     p.add_argument("--port", type=int, default=9000)
     p.add_argument("--advertise", default=None,
-                   help="URL other nodes use to reach this seeder "
+                   help="URL other nodes use to reach this worker "
                         "(default http://localhost:<port>)")
     args = p.parse_args()
 
@@ -46,7 +46,7 @@ def main() -> None:
     def _on_startup() -> None:
         _register(args.coordinator, node_id, advertise, args.model)
 
-    print(f"[seeder] serving '{args.model}' at {advertise} (engine: Ollama)")
+    print(f"[worker] serving '{args.model}' at {advertise} (engine: Ollama)")
     uvicorn.run(app, host=args.host, port=args.port)
 
 

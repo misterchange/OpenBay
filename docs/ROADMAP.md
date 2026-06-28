@@ -9,20 +9,20 @@ hypotheses each milestone proves.
 
 Done (v0.1 skeleton):
 - [x] Coordinator: registry + matchmaking + streak ledger
-- [x] Seeder: registers, serves a whole model via Ollama, streams tokens
+- [x] Worker: registers, serves a whole model via Ollama, streams tokens
 - [x] Client: streams tokens from the swarm
 - [x] Smoke tests (no GPU/Ollama needed)
 
 Next (good first issues 👇):
 - [ ] **Spot-check verification** — coordinator re-sends a small % of jobs to a
-      second seeder and compares first-N tokens; flag mismatches. *(core to H3)*
+      second worker and compares first-N tokens; flag mismatches. *(core to H3)*
 - [ ] **Persistence** — back the registry + streak ledger with SQLite so state
       survives restarts.
-- [ ] **Heartbeat + eviction** — drop seeders that stop sending heartbeats; reroute.
+- [ ] **Heartbeat + eviction** — drop workers that stop sending heartbeats; reroute.
 - [ ] **`/metrics`** — expose TTFT and tokens/sec per request (Prometheus-style).
 - [ ] **WAN simulation harness** — scripted `tc netem` latency to benchmark H2 honestly.
-- [ ] **Desktop seeder** — one-click "share my GPU while idle" wrapper (Tauri/Electron).
-- [ ] **Engine adapters** — llama.cpp and MLX seeders alongside Ollama.
+- [ ] **Desktop worker** — one-click "share my GPU while idle" wrapper (Tauri/Electron).
+- [ ] **Engine adapters** — llama.cpp and MLX workers alongside Ollama.
 - [ ] **A tiny web dashboard** — live swarm + streak view.
 
 ## v2 — Big-model sharding
@@ -51,7 +51,7 @@ If you're new, these are self-contained and high-value:
 1. SQLite persistence for the ledger (`coordinator/ledger.py`).
 2. Spot-check verification endpoint + comparison logic.
 3. `/metrics` timing on `/v1/infer`.
-4. A llama.cpp seeder adapter mirroring `seeder/worker.py`.
+4. A llama.cpp worker adapter mirroring `worker/worker.py`.
 5. A 30-line web page hitting `/nodes` and `/ledger` for a live dashboard.
 
 Open an issue describing your approach before large changes. Apache-2.0; be kind.

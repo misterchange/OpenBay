@@ -6,8 +6,8 @@ from pydantic import BaseModel
 
 class RegisterRequest(BaseModel):
     node_id: str
-    url: str               # URL other nodes use to reach this seeder
-    models: list[str]      # model names this seeder can serve (whole-model, v1)
+    url: str               # URL other nodes use to reach this worker
+    models: list[str]      # model names this worker can serve (whole-model, v1)
     gpu: str | None = None
 
 
@@ -20,7 +20,7 @@ class InferRequest(BaseModel):
 
 
 class GenerateRequest(BaseModel):
-    """Coordinator -> seeder."""
+    """Coordinator -> worker."""
     model: str
     prompt: str
     max_tokens: int = 256
