@@ -38,23 +38,32 @@ OpenBay has three roles — you can be any or several of them:
 
 ---
 
-## Why this can work now (when Petals couldn't)
+## Why this works now
 
-[Petals](https://arxiv.org/abs/2312.08361) proved you *can* pool consumer GPUs,
-but autoregressive decoding forced **one network round-trip per token** — over home
-internet that caps you at ~1–2 tokens/sec. The 2026 advances that change the math:
+Pooling volunteers' GPUs to run big models isn't a new idea — a 2022 research
+project called **[Petals](https://arxiv.org/abs/2312.08361)** first proved it's
+possible. But it was too slow to use, and *why* is the whole point of OpenBay.
 
-- **Speculative decoding** (incl. block-diffusion drafters like
-  [DFlash](https://arxiv.org/abs/2602.06036) /
-  [DFlare](https://arxiv.org/abs/2606.02091)) — verify a *block* of tokens per
-  round-trip, lifting tokens-per-round-trip from ~1 to 4–8.
-- **Quantization-Aware Training** (BitNet, Gemma QAT) — near-lossless 4-bit (and
-  lower) models that fit a single consumer card.
-- **Open diffusion/MoE models** (DiffusionGemma, Apache-2.0) — more tokens per
-  forward pass, runnable locally.
+To run a model too big for one machine, Petals chopped it into pieces spread across
+many computers. The problem: generating text is sequential — each word depends on the
+one before — so producing *every single word* meant a full round-trip across the
+internet, machine to machine. That capped it at about **1 word per second.**
 
-The bottleneck was never "pooling GPUs." It was *tokens-per-round-trip*. That's
-the variable these techniques move.
+OpenBay's core move is the opposite: **keep each model whole, on one machine.** No
+per-word internet trip, so you get that machine's full speed (tens to hundreds of
+words per second). And for models too big to keep whole, three 2026 advances finally
+make the split-up case fast too:
+
+- **Speculative decoding** ([DFlash](https://arxiv.org/abs/2602.06036) /
+  [DFlare](https://arxiv.org/abs/2606.02091)) — a machine guesses a whole *block* of
+  words that the others check in one internet trip, instead of one word per trip.
+- **Quantization** (BitNet, Gemma QAT) — shrinks models so *bigger* ones still fit on
+  one card, keeping them in the fast whole-model lane.
+- **Open diffusion / MoE models** (DiffusionGemma) — generate many words per step and
+  run on consumer hardware.
+
+The bottleneck was never "pooling GPUs." It was **how many words you generate per
+internet trip** — and that's exactly what these techniques move.
 
 ## Quickstart (local demo, ~5 min)
 
@@ -122,10 +131,10 @@ essentially the worker's **native** tokens/sec — OpenBay adds almost nothing (
 the prompt and the text stream cross the wire). There's **no per-token network
 round-trip**, which is exactly why Petals was stuck at ~1 tok/s and OpenBay isn't:
 
-| Approach | WAN round-trips / token | tokens/sec |
+| Approach | Internet trips per token | tokens/sec |
 |---|---|---|
-| **Petals (2022)** — always shards the model across peers | 1 (a full lap, every token) | ~1 |
-| **OpenBay (target)** — whole-model when it fits, block-verified when sharded | 0, or amortized to a fraction | near-native (tens–hundreds); ~10–20 even for giants |
+| **Petals (2022)** — splits each model across machines | 1 (a full trip, every token) | ~1 |
+| **OpenBay** — keeps each model whole when it fits | 0 (whole); a fraction when it must split | near-native (tens–hundreds); ~10–20 even for giants |
 
 Rough native worker speeds on a single consumer GPU: **~80–150 tok/s** for a 3B,
 **~40–80** for a 7–8B, **~20–40** for DiffusionGemma-26B. (Mac/CPU are slower; check

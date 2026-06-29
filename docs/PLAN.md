@@ -12,9 +12,10 @@ Running large language models is gated behind expensive accelerators, cloud
 accounts, payment rails, and regional restrictions. We propose **OpenBay**, an
 open-source peer-to-peer network that pools idle consumer GPUs to serve models no
 single participant can run alone — "BitTorrent for AI inference." Prior work
-([Petals](https://arxiv.org/abs/2312.08361), 2022) proved consumer-GPU pooling is
-*possible* but was bottlenecked by per-token network round-trips, weak trust
-guarantees, and heavy memory footprints. We argue that a set of 2025–2026 advances
+([Petals](https://arxiv.org/abs/2312.08361), 2022 — the first attempt to pool
+volunteers' consumer GPUs this way) proved it *possible* but too slow to use:
+splitting a model across machines forced a network round-trip for every token,
+alongside weak trust guarantees and heavy memory footprints. We argue that a set of 2025–2026 advances
 — **speculative / block-diffusion decoding**, **ultra-low-bit quantization-aware
 training (QAT)**, and **lightweight verifiable inference** — change the governing
 variable (tokens generated per network round-trip) enough to make a usable,
@@ -48,7 +49,7 @@ exchange, and on shrinking models to fit the hardware volunteers actually own.
 
 | Lever | What it changes | Primary sources |
 |---|---|---|
-| Speculative decoding (block-diffusion drafters) | tokens verified per round-trip: ~1 → 4–8 | [DFlash 2602.06036](https://arxiv.org/abs/2602.06036), [DFlare 2606.02091](https://arxiv.org/abs/2606.02091) |
+| Speculative decoding (block-diffusion drafters) | tokens verified per round-trip: ~1 → 4–8 | [DFlash 2602.06036](https://arxiv.org/abs/2602.06036), [DFlare 2606.02091](https://arxiv.org/abs/2606.02091), DSpark (DeepSeek, 2026) |
 | Block diffusion / MTP | tokens generated per forward pass | [BD3-LM 2503.09573](https://arxiv.org/abs/2503.09573), [Fast-dLLM v2 2509.26328](https://arxiv.org/abs/2509.26328) |
 | Ultra-low-bit QAT | model VRAM footprint (fits one consumer card) | BitNet; Gemma QAT |
 | Verifiable inference | trust at ~1% overhead (no ZK blowup) | [VeriLLM 2509.24257](https://arxiv.org/abs/2509.24257) |
@@ -161,7 +162,7 @@ every version ships and is useful on its own.
   [AI Horde](https://aihorde.net/) with a clean client.
 - **v2 — Big-model sharding.** Split models too large for one card across peers,
   using block/speculative transport to keep tokens-per-round-trip high. Targets
-  **H2**. This is where the DFlare-style drafting and WAN engineering live, and
+  **H2**. This is where the best available drafter (the DFlash → DFlare → DSpark line — DSpark is production-proven at DeepSeek scale, open-sourced as DeepSpec) and WAN engineering live, and
   where the drafter/target coupling problem must be solved.
 - **v3 — Permissionless trust + economy.** VeriLLM-style verifiable inference,
   reputation, and real settlement. Targets the trustless end of **H3**.
@@ -264,5 +265,5 @@ structured research grant.
 ## References
 
 Petals (2312.08361) · BD3-LM (2503.09573) · Fast-dLLM v2 (2509.26328) ·
-DFlash (2602.06036) · DFlare (2606.02091) · VeriLLM (2509.24257) ·
+DFlash (2602.06036) · DFlare (2606.02091) · DSpark/DeepSpec (DeepSeek-AI, 2026) · VeriLLM (2509.24257) ·
 DECA (2606.03209) · AI Horde (aihorde.net) · Exo (github.com/exo-explore/exo).
