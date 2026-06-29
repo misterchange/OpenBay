@@ -19,7 +19,10 @@ alongside weak trust guarantees and heavy memory footprints. We argue that a set
 — **speculative / block-diffusion decoding**, **ultra-low-bit quantization-aware
 training (QAT)**, and **lightweight verifiable inference** — change the governing
 variable (tokens generated per network round-trip) enough to make a usable,
-trust-minimized swarm practical. This document states what we will build, in what
+trust-minimized swarm practical. OpenBay runs in two modes — an open, permissionless
+swarm, and **private clusters** that friends, a lab, or a team form behind a shared
+join code, which dissolves the trust, privacy, and cold-start hurdles and is likely
+the easiest path to first adoption. This document states what we will build, in what
 order, and the specific, measurable claims by which we should be judged.
 
 ## 1. Problem
